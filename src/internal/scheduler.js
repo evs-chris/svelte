@@ -6,6 +6,9 @@ let dirty_components = [];
 const binding_callbacks = [];
 const render_callbacks = [];
 
+const before_next = [];
+const after_next = [];
+
 export const intros = { enabled: false };
 
 export function schedule_update(component) {
@@ -24,17 +27,31 @@ export function add_binding_callback(fn) {
 	binding_callbacks.push(fn);
 }
 
+export function beforeNextUpdate(fn) {
+	before_next.push(fn);
+}
+
+export function afterNextUpdate(fn) {
+	after_next.push(fn);
+}
+
 export function flush() {
 	const seen_callbacks = new Set();
 
 	do {
-		// first, call beforeUpdate functions
+		// first, call beforeNextUpdate callbacks
+		if (before_next.length) run_all(before_next.splice(0, before_next.length));
+		
+		// then call beforeUpdate functions
 		// and update components
 		while (dirty_components.length) {
 			update(dirty_components.shift().$$);
 		}
 
 		while (binding_callbacks.length) binding_callbacks.shift()();
+
+		// then call afterNextUpdate callbacks
+		if (after_next.length) run_all(after_next.splice(0, after_next.length));
 
 		// then, once components are updated, call
 		// afterUpdate functions. This may cause
@@ -48,7 +65,7 @@ export function flush() {
 				seen_callbacks.add(callback);
 			}
 		}
-	} while (dirty_components.length);
+	} while (dirty_components.length + before_next.length + after_next.length);
 
 	update_scheduled = false;
 }

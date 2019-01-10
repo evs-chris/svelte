@@ -3,5 +3,7 @@ export {
 	onDestroy,
 	beforeUpdate,
 	afterUpdate,
+	beforeNextUpdate,
+	afterNextUpdate,
 	createEventDispatcher
 } from './internal';
